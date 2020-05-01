@@ -4,14 +4,14 @@ from bs4 import BeautifulSoup as bSoup
 from datetime import datetime, timedelta, date
 from concurrent import futures
 
-db_name = 'database.db'
+db_name = 'assets/database.db'
 
 
 def connect_db(db_name):
     ''' Decorator to handle the connection to the database '''
     def wrapper(function):
         def wrapped(*args, **kwargs):
-            conn = sqlite3.connect(f'assets/{db_name}')
+            conn = sqlite3.connect(f'{db_name}')
             c = conn.cursor()
             result = function(c, *args, **kwargs)
             conn.commit()
@@ -57,8 +57,9 @@ def get_data_day(day):
         return [[None] * 5] * 7
     # Extract values from webpage
     values = [val.text.strip() for val in table.find_all('td')]
-    # Group values by station and slice extra info
-    values = list(zip(*[iter(values)] * 8))[:5]
+    # Group values by station (8 by 8) and select only correct info
+    stations_names = ('Viale Liguria', 'Viale Marche', 'Via Pascal', 'Via Senato', 'Verziere')
+    values = [elem for elem in zip(*[iter(values)] * 8) if elem[0] in stations_names]
     # Zip them into lists by pollutant
     values = list(zip(*values))
     # Remove missing values and stations names
@@ -79,7 +80,7 @@ def get_data(days):
 
 
 def create_db(db_name):
-    conn = sqlite3.connect(f'assets/{db_name}.db')
+    conn = sqlite3.connect(f'{db_name}')
     c = conn.cursor()
     poll_names = ('SO2', 'PM10', 'PM2', 'NO2', 'CO', 'O3', 'C6H6')
     for poll in poll_names:
@@ -142,5 +143,4 @@ def main():
 
 
 if __name__ == '__main__':
-    data = select_interval('PM10', '2020-04-12', '2020-04-18')
-    print(data)
+    create_db(db_name)
