@@ -4,20 +4,16 @@ from bs4 import BeautifulSoup as bSoup
 from datetime import datetime, timedelta, date
 from concurrent import futures
 
-db_name = 'assets/database.db'
 
-
-def connect_db(db_name):
+def connect_db(function):
     ''' Decorator to handle the connection to the database '''
-    def wrapper(function):
-        def wrapped(*args, **kwargs):
-            conn = sqlite3.connect(f'{db_name}')
-            c = conn.cursor()
-            result = function(c, *args, **kwargs)
-            conn.commit()
-            conn.close()
-            return result
-        return wrapped
+    def wrapper(*args, **kwargs):
+        conn = sqlite3.connect('assets/database2.db')
+        c = conn.cursor()
+        result = function(c, *args, **kwargs)
+        conn.commit()
+        conn.close()
+        return result
     return wrapper
 
 
@@ -86,11 +82,13 @@ def create_db(db_name):
     for poll in poll_names:
         query = f' CREATE TABLE {poll} (timestamp text, Liguria real, Marche real, Pascal real, Senato real, Verziere real)'
         c.execute(query)
+    query = f' CREATE TABLE meteo (timestamp text, AvgTemp integer, Humidity integer, Wind integer, Precipitation text)'
+    c.execute(query)
     conn.commit()
     conn.close()
 
 
-@connect_db(db_name)
+@connect_db
 def insert(c, start, end):
     ''' Fetch and insert data into db if not existing already '''
     tables = ('SO2', 'PM10', 'PM2', 'NO2', 'CO', 'O3', 'C6H6')
@@ -111,19 +109,22 @@ def insert(c, start, end):
             c.execute(query, (date, *data[i][j]))
 
 
-@connect_db(db_name)
+@connect_db
 def select_interval(c, poll_name, start, end):
     ''' Return the values of every station for selected pollutant '''
     # Convert start, end to datetime.date() if not already
-    if type(start) and type(end) == str:
+    if isinstance(start, str) and isinstance(end, str):
         start, end = date_helper(start, end)
     insert(start, end)
-    query = f'SELECT * FROM {poll_name} WHERE timestamp BETWEEN date(?) AND date(?)'
+    query = f'SELECT * FROM {poll_name} WHERE timestamp BETWEEN date(?) AND date(?) ORDER BY timestamp'
     c.execute(query, (start, end))
     # Unzip timestamps and poll_values and sort them
-    sorted_data = zip(*sorted(c.fetchall(), key=lambda x: datetime.fromisoformat(x[0]).date()))
+    #sorted_data = zip(*c.fetchall())
+    #sorted_data = zip(*sorted(c.fetchall(), key=lambda x: datetime.fromisoformat(x[0]).date()))
+    #print(list(sorted_data) == data)
+    # print(data)
     stations = ('Dates', 'Liguria', 'Marche', 'Pascal', 'Senato', 'Verziere')
-    data = dict(zip(stations, sorted_data))
+    data = dict(zip(stations, zip(*c.fetchall())))
     return {k: v for k, v in data.items() if any(v)}
 
 
@@ -134,13 +135,16 @@ def select_last_month(poll_name):
 
 
 def main():
-    start, end = ['22-4-2020', '28-4-2020']
+    start, end = ['22-4-2018', '28-4-2020']
     table = 'PM10'
     # start, end = date_helper(start, end)
     data = select_interval(table, start, end)
     #data = last_month()
-    print(data)
+    # print(data)
 
 
 if __name__ == '__main__':
-    create_db(db_name)
+    #db_name = 'assets/database.db'
+    # create_db('assets/database2.db')
+    data = select_interval('PM10', '2019-04-18', '2020-04-28')
+    print(data)
