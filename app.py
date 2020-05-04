@@ -6,9 +6,8 @@ import dash_bootstrap_components as dbc
 from sql import *
 
 
-#external_stylesheets = ['assets/style.css']
-#external_stylesheets = [dbc.themes.LUX]
-external_stylesheets = ['assets/lux.css']
+external_stylesheets = [dbc.themes.LUX]
+#external_stylesheets = ['static/lux.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 
@@ -35,8 +34,7 @@ def data2plot(poll_name, data):
 poll_name = 'PM10'
 data = select_last_month(poll_name)
 data = data2plot(poll_name, data)
-title = html.Div(html.H1('Pollution in Milan', style={
-                 'backgroundColor': '#000', 'color': '#fff'}))
+title = html.H1('Pollution in Milan', style={'backgroundColor': '#000', 'color': '#fff'})
 
 dropdown = dbc.FormGroup(
     dcc.Dropdown(
@@ -64,6 +62,7 @@ date_picker = dbc.FormGroup(
                         updatemode='bothdates'),
     style={'font': {'size': 30}})
 
+
 form = dbc.Form([
     dbc.Container([
         dbc.Row(
@@ -72,7 +71,7 @@ form = dbc.Form([
         ),
         dbc.Row(
             [dbc.Col(html.Div(dropdown), width={'size': 3, 'offset': 2}),
-             dbc.Col(html.Div(date_picker), width={'size': 3, 'offset': 2})],
+             dbc.Col(html.Div(date_picker), width={'size': 3, 'offset': 2})]
         )
     ], fluid=True)
 ], inline=True)
