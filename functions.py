@@ -8,7 +8,7 @@ from concurrent import futures
 def connect_db(function):
     ''' Decorator to handle the connection to the database '''
     def wrapper(*args, **kwargs):
-        conn = sqlite3.connect('assets/database2.db')
+        conn = sqlite3.connect('assets/database.db')
         c = conn.cursor()
         result = function(c, *args, **kwargs)
         conn.commit()
@@ -54,8 +54,8 @@ def get_data_day(day):
     # Extract values from webpage
     values = [val.text.strip() for val in table.find_all('td')]
     # Group values by station (8 by 8) and select only correct info
-    stations_names = ('Viale Liguria', 'Viale Marche', 'Via Pascal', 'Via Senato', 'Verziere')
-    values = [elem for elem in zip(*[iter(values)] * 8) if elem[0] in stations_names]
+    #stations_names = ('Viale Liguria', 'Viale Marche', 'Via Pascal', 'Via Senato', 'Verziere')
+    values = [elem for elem in zip(*[iter(values)] * 8)][:5]
     # Zip them into lists by pollutant
     values = list(zip(*values))
     # Remove missing values and stations names
@@ -76,13 +76,14 @@ def get_data(days):
 
 
 def create_db(db_name):
+    ''' Create the database '''
     conn = sqlite3.connect(f'{db_name}')
     c = conn.cursor()
     poll_names = ('SO2', 'PM10', 'PM2', 'NO2', 'CO', 'O3', 'C6H6')
     for poll in poll_names:
         query = f' CREATE TABLE {poll} (timestamp text, Liguria real, Marche real, Pascal real, Senato real, Verziere real)'
         c.execute(query)
-    query = f' CREATE TABLE meteo (timestamp text, AvgTemp integer, Humidity integer, Wind integer, Precipitation text)'
+    query = f' CREATE TABLE meteo (timestamp text, AvgTemp real, Humidity integer, Wind integer, Precipitation text)'
     c.execute(query)
     conn.commit()
     conn.close()
@@ -118,11 +119,6 @@ def select_interval(c, poll_name, start, end):
     insert(start, end)
     query = f'SELECT * FROM {poll_name} WHERE timestamp BETWEEN date(?) AND date(?) ORDER BY timestamp'
     c.execute(query, (start, end))
-    # Unzip timestamps and poll_values and sort them
-    #sorted_data = zip(*c.fetchall())
-    #sorted_data = zip(*sorted(c.fetchall(), key=lambda x: datetime.fromisoformat(x[0]).date()))
-    #print(list(sorted_data) == data)
-    # print(data)
     stations = ('Dates', 'Liguria', 'Marche', 'Pascal', 'Senato', 'Verziere')
     data = dict(zip(stations, zip(*c.fetchall())))
     return {k: v for k, v in data.items() if any(v)}
@@ -137,14 +133,8 @@ def select_last_month(poll_name):
 def main():
     start, end = ['22-4-2018', '28-4-2020']
     table = 'PM10'
-    # start, end = date_helper(start, end)
     data = select_interval(table, start, end)
-    #data = last_month()
-    # print(data)
 
 
 if __name__ == '__main__':
-    #db_name = 'assets/database.db'
-    # create_db('assets/database2.db')
-    data = select_interval('PM10', '2019-04-18', '2020-04-28')
-    print(data)
+    main()

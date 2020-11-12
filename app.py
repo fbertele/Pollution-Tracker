@@ -3,11 +3,10 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
-from sql import *
+from functions import *
 
 
 external_stylesheets = [dbc.themes.LUX]
-#external_stylesheets = ['static/lux.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 
@@ -20,7 +19,8 @@ def data2plot(poll_name, data):
     plot_data = {'data': [dict(zip(keys, [data['Dates'], data[station], station, True]))
                           for station in data.keys()][1:]}
     plot_data['data'].append({'x': (start, end), 'y': (limit, limit),
-                              'connectgaps': True, 'showlegend': False})
+                              'connectgaps': True, 'name': 'Limit'})
+
     plot_data['layout'] = {'title': poll_name,
                            'font': {'size': 15},
                            'xaxis': {'rangeslider': {'visible': True}},
@@ -109,4 +109,4 @@ def update_poll(selected_poll, start_date, end_date):
 
 
 if __name__ == '__main__':
-    app.run_server(port=5000, debug=True)
+    app.run_server(port=5000, debug=False)
